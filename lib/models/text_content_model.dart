@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
 class TextContentModel {
@@ -16,14 +15,19 @@ class TextContentModel {
 
   factory TextContentModel.fromMap(Map<String, dynamic> map) {
     return TextContentModel(
-      role: map['role'] as String,
-      parts: List<TextPartModel>.from((map['parts'] as List<int>).map<TextPartModel>((x) => TextPartModel.fromMap(x as Map<String,dynamic>),),),
+      role: map['role'] ?? '',
+      parts: List<TextPartModel>.from(
+        (map['parts'] as List).map(
+          (x) => TextPartModel.fromMap(x as Map<String, dynamic>),
+        ),
+      ),
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory TextContentModel.fromJson(String source) => TextContentModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory TextContentModel.fromJson(String source) =>
+      TextContentModel.fromMap(json.decode(source) as Map<String, dynamic>);
 }
 
 class TextPartModel {
@@ -39,11 +43,12 @@ class TextPartModel {
 
   factory TextPartModel.fromMap(Map<String, dynamic> map) {
     return TextPartModel(
-      text: map['text'] as String,
+      text: map['text'] ?? '',
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory TextPartModel.fromJson(String source) => TextPartModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory TextPartModel.fromJson(String source) =>
+      TextPartModel.fromMap(json.decode(source) as Map<String, dynamic>);
 }
