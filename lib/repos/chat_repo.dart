@@ -15,7 +15,6 @@ class ChatRepo {
       Map<String, dynamic> headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": dotenv.env['gemini_api_key'],
-        // "x-goog-api-key": "AIzaSyAV42F8QYCqNMqaT9Y4vZbr8H6fGPKWIbE",
       };
 
       Map<String, dynamic> payload = {

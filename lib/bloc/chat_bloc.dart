@@ -9,6 +9,7 @@ part 'chat_event.dart';
 part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
+  bool user = true;
   ChatBloc() : super(ChatInitial()) {
     on<GenerateText>(onGenerateText);
     // on<ChatInitialize>(onChatInitialize);
@@ -20,19 +21,29 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   //   emit(ChatInitializeState());
   // }
 
-  List<TextContentModel> messages = [];
+  List<TextContentModel> messages = [
+    
+  ];
 
   FutureOr<void> onGenerateText(
     GenerateText event,
     Emitter<ChatState> emit,
   ) async {
+    String customRole = user ? "user" : "model";
     messages.add(
       TextContentModel(
-        role: "user",
+        role: customRole,
         parts: [TextPartModel(text: event.prompt)],
       ),
     );
+    user = !user;
+    messages.add(TextContentModel(
+      role: "system",
+      parts: [TextPartModel(text: "With lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphinWith lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphin With lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphinWith lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphin With lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphinWith lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphinWith lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphinWith lifelong bonds, signature whistles and echolocation, dolphins are more than just smart swimmers. First observed in 2022, World Dolphin Day shines a light on these intelligent marine mammals and the oceans they rely on. Over 40 dolphin species swim our seas, from the Māui dolphin to the Irrawaddy dolphin")],
+    ),);
+    user = !user;
     emit(PromptEnteredState(messages: messages));
+    /*
     emit(isLoading());
     try {
       TextContentModel? content = await ChatRepo.chatTextGeneration(messages);
@@ -57,5 +68,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       );
       emit(PromptEnteredState(messages: messages));
     }
+    */
   }
 }

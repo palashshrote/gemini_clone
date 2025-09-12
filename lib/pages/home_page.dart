@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
+import 'package:gemini_clone/design/text_prompt.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +18,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: Text('Gemini Clone')),
       body: BlocConsumer<ChatBloc, ChatState>(
         bloc: chatBloc,
@@ -32,153 +34,127 @@ class _HomePageState extends State<HomePage> {
 
               return Column(
                 children: [
-                  /*
-                  Container(
-                    padding: EdgeInsets.only(top: 10.h, bottom: 10.h),
-                    child: Text(
-                      'Gemini Clone',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color.fromARGB(255, 8, 33, 54),
-                      ),
-                    ),
-                  ),
-                  */
                   Expanded(
+                    flex: 8, // 80% height
                     child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 8,
+                      ),
                       itemCount: successState.messages.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return ListTile(
-                          title: Text(
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 6.0,
+                          ), // space between messages
+                          child: customListTile(
                             successState.messages[index].parts[0].text,
+                            successState.messages[index].role,
                           ),
-                          tileColor: Colors.blueGrey,
                         );
                       },
                     ),
                   ),
-                  Container(
-                    // color: Colors.blueAccent,
-                    // height: 20,
-                    padding: EdgeInsets.all(10.w),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: promptController,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.w),
-                              ),
-                              fillColor: Colors.blue.shade200,
-                              filled: true,
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).primaryColor,
+
+                  Expanded(
+                    flex: 2, // 20% height
+                    child: SafeArea(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(
+                          vertical: 5,
+                          horizontal: 10,
+                        ),
+                        padding: EdgeInsets.all(10.w),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: promptController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  hintText: "Type a message...",
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 20,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade800,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide.none,
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(100.w),
                               ),
                             ),
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        CircleAvatar(
-                          radius: 8.w,
-                          backgroundColor: Colors.blue.shade900,
-                          child: IconButton(
-                            focusColor: Theme.of(context).primaryColor,
-                            icon: Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 7.w,
+                            const SizedBox(width: 10),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.tealAccent.shade700,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.send,
+                                  color: Colors.black,
+                                ),
+                                onPressed: () {
+                                  chatBloc.add(
+                                    GenerateText(prompt: promptController.text),
+                                  );
+                                  promptController.clear();
+                                },
+                              ),
                             ),
-                            onPressed: () {
-                              // Handle send action
-                              chatBloc.add(
-                                GenerateText(prompt: promptController.text),
-                              );
-                              promptController.clear();
-                            },
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
               );
+
             default:
               // final successState = state as PromptEnteredState;
 
               return Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  /*
                   Container(
-                    padding: EdgeInsets.only(top: 10.h, bottom: 10.h),
-                    child: Text(
-                      'Gemini Clone',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color.fromARGB(255, 8, 33, 54),
-                      ),
-                    ),
-                  ),
-                  
-                  
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: successState.messages.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return ListTile(
-                          title: Text(
-                            successState.messages[index].parts[0].text,
-                          ),
-                          tileColor: Colors.blueGrey,
-                        );
-                      },
-                    ),
-                  ),
-                  */
-                  
-                  Container(
-                    // color: Colors.blueAccent,
-                    // height: 20,
                     padding: EdgeInsets.all(10.w),
                     child: Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: promptController,
+                            style: const TextStyle(color: Colors.white),
                             decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.w),
+                              hintText: "Type a message...",
+                              hintStyle: TextStyle(color: Colors.grey.shade500),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 20,
                               ),
-                              fillColor: Colors.blue.shade900,
                               filled: true,
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                borderRadius: BorderRadius.circular(100.w),
+                              fillColor: Colors.grey.shade800,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide: BorderSide.none,
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(width: 10.w),
-                        CircleAvatar(
-                          radius: 8.w,
-                          backgroundColor: Colors.blue.shade900,
+                        const SizedBox(width: 10),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.tealAccent.shade700,
+                            shape: BoxShape.circle,
+                          ),
                           child: IconButton(
-                            focusColor: Theme.of(context).primaryColor,
-                            icon: Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 7.w,
-                            ),
+                            icon: const Icon(Icons.send, color: Colors.black),
                             onPressed: () {
-                              // Handle send action
                               chatBloc.add(
                                 GenerateText(prompt: promptController.text),
                               );
