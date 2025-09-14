@@ -14,6 +14,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final chatBloc = ChatBloc();
   TextEditingController promptController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -24,151 +25,133 @@ class _HomePageState extends State<HomePage> {
         bloc: chatBloc,
         listener: (context, state) {
           // TODO: implement listener
+          if (state is PromptEnteredState) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 1200),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
+          } else if (state is isLoading) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
+          }
         },
+
         builder: (context, state) {
           switch (state.runtimeType) {
             case isLoading:
-              return const Center(child: CircularProgressIndicator());
-            case (PromptEnteredState):
+              final successState = state as isLoading;
+              return _chatLayout(successState.messages, true);
+
+            case PromptEnteredState:
               final successState = state as PromptEnteredState;
-
-              return Column(
-                children: [
-                  Expanded(
-                    flex: 8, // 80% height
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 8,
-                      ),
-                      itemCount: successState.messages.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 6.0,
-                          ), // space between messages
-                          child: customListTile(
-                            successState.messages[index].parts[0].text,
-                            successState.messages[index].role,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  Expanded(
-                    flex: 2, // 20% height
-                    child: SafeArea(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 5,
-                          horizontal: 10,
-                        ),
-                        padding: EdgeInsets.all(10.w),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: promptController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: "Type a message...",
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey.shade500,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 20,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade800,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.tealAccent.shade700,
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.send,
-                                  color: Colors.black,
-                                ),
-                                onPressed: () {
-                                  chatBloc.add(
-                                    GenerateText(prompt: promptController.text),
-                                  );
-                                  promptController.clear();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
+              return _chatLayout(successState.messages, false);
 
             default:
-              // final successState = state as PromptEnteredState;
-
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10.w),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: promptController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: "Type a message...",
-                              hintStyle: TextStyle(color: Colors.grey.shade500),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 20,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade800,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.tealAccent.shade700,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.send, color: Colors.black),
-                            onPressed: () {
-                              chatBloc.add(
-                                GenerateText(prompt: promptController.text),
-                              );
-                              promptController.clear();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
+              return _inputBar(); // initial empty state
           }
         },
+      ),
+    );
+  }
+
+  Widget _chatLayout(List<dynamic> messages, bool loading) {
+    return Column(
+      children: [
+        Expanded(
+          flex: 8,
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                child: customListTile(
+                  messages[index].parts[0].text,
+                  messages[index].role,
+                ),
+              );
+            },
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: SafeArea(child: _inputBar(loading: loading)),
+        ),
+      ],
+    );
+  }
+
+  // Input bar widget
+  Widget _inputBar({bool loading = false}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+      padding: EdgeInsets.all(10.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: promptController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Type a message...",
+                hintStyle: TextStyle(color: Colors.grey.shade500),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 20,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade800,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.tealAccent.shade700,
+              shape: BoxShape.circle,
+            ),
+            child: loading
+                ? const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.send, color: Colors.black),
+                    onPressed: () {
+                      if (promptController.text.trim().isNotEmpty) {
+                        chatBloc.add(
+                          GenerateText(prompt: promptController.text.trim()),
+                        );
+                        promptController.clear();
+                      }
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
