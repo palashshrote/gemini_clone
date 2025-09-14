@@ -12,7 +12,7 @@ final class isLoading extends ChatState {
 // final class ChatInitializeState extends ChatState {}
 final class PromptEnteredState extends ChatState {
   final List<TextContentModel> messages;
-
+  // final List<String> prompts;
   PromptEnteredState({required this.messages}); 
 }
 

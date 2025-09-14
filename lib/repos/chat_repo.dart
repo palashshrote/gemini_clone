@@ -2,53 +2,86 @@ import 'package:dio/dio.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-
 class ChatRepo {
-  // static String key = ;
+  static final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": dotenv.env['gemini_api_key'] ?? "",
+      },
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 25),
+    ),
+  );
+
   static Future<TextContentModel?> chatTextGeneration(
     List<TextContentModel> previousMessages,
   ) async {
+    final url = "models/gemini-2.5-flash:generateContent";
+
+    final payload = {
+      "contents": previousMessages.map((e) => e.toMap()).toList(),
+      "generationConfig": {
+        "temperature": 0.25,
+        "thinkingConfig": {"thinkingBudget": 0},
+      },
+      "tools": [
+        {"googleSearch": {}},
+      ],
+    };
+
     try {
-      String url =
-          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+      // 🔹 Debugging log
+      print("➡️ Sending payload: $payload");
 
-      Map<String, dynamic> headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": dotenv.env['gemini_api_key'],
-      };
+      final response = await _dio.post(url, data: payload);
 
-      Map<String, dynamic> payload = {
-        "contents": previousMessages.map((e) => e.toMap()).toList(),
-        "generationConfig": {
-          "temperature": 0.25,
-          "thinkingConfig": {"thinkingBudget": 0},
-        },
-        "tools": [
-          {"googleSearch": {}},
-        ],
-      };
-      Dio dio = Dio();
-
-      dio.options = BaseOptions(headers: headers);
-      final response = await dio.post(url, data: payload);
-      // print(response.toString());
       if (response.statusCode == 200) {
-        final decodedResponse = response.data;
-        final contentData = decodedResponse['candidates'][0]['content'];
-        TextContentModel textContentModel = TextContentModel.fromMap(
-          contentData,
-        );
-        print(textContentModel.parts.first.text);
-        return textContentModel;
+        final decoded = response.data;
+
+        if (decoded["candidates"] != null &&
+            decoded["candidates"].isNotEmpty) {
+          final contentData = decoded["candidates"][0]["content"];
+          final textContentModel = TextContentModel.fromMap(contentData);
+
+          print("✅ Response: ${textContentModel.parts.first.text}");
+          return textContentModel;
+        } else {
+          print("⚠️ No candidates returned by API");
+          return TextContentModel(
+            role: "error",
+            parts: [TextPartModel(text: "No candidates in response")],
+          );
+        }
       } else {
-        print("Error loading data from server");
-        return null;
-        // throw Exception("Failed to load data from server");
+        print("❌ Server error: ${response.statusCode}");
+        return TextContentModel(
+          role: "error",
+          parts: [TextPartModel(text: "Server error ${response.statusCode}")],
+        );
       }
-    } catch (e) {
-      print(e.toString());
-      // throw Exception("Caught exception: $e");
-      return null;
+    } on DioException catch (e) {
+      print("❌ DioException: ${e.message}");
+      if (e.response != null) {
+        print("❌ Status: ${e.response?.statusCode}");
+        print("❌ Body: ${e.response?.data}");
+      }
+      return TextContentModel(
+        role: "error",
+        parts: [
+          TextPartModel(
+            text: "Request failed: ${e.response?.statusCode ?? e.message}",
+          ),
+        ],
+      );
+    } catch (e, stack) {
+      print("❌ Unexpected error: $e");
+      print(stack);
+      return TextContentModel(
+        role: "error",
+        parts: [TextPartModel(text: "Unexpected error: $e")],
+      );
     }
   }
 }

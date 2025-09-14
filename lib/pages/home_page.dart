@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
 import 'package:gemini_clone/design/text_prompt.dart';
+import 'package:gemini_clone/models/text_content_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,7 +21,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(title: Text('Gemini Clone')),
+      appBar: AppBar(title: Text('AquaVerse'), centerTitle: true),
       body: BlocConsumer<ChatBloc, ChatState>(
         bloc: chatBloc,
         listener: (context, state) {
@@ -66,7 +67,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _chatLayout(List<dynamic> messages, bool loading) {
+  Widget _chatLayout(List<TextContentModel> messages, bool loading) {
     return Column(
       children: [
         Expanded(
@@ -81,6 +82,8 @@ class _HomePageState extends State<HomePage> {
                 child: customListTile(
                   messages[index].parts[0].text,
                   messages[index].role,
+                  messages,
+                  chatBloc,
                 ),
               );
             },

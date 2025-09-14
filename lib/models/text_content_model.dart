@@ -3,8 +3,9 @@ import 'dart:convert';
 class TextContentModel {
   final String role;
   final List<TextPartModel> parts;
+  final bool isRetry;
 
-  TextContentModel({required this.role, required this.parts});
+  TextContentModel({required this.role, required this.parts, this.isRetry = false});
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{

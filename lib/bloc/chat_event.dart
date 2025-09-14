@@ -5,7 +5,6 @@ sealed class ChatEvent {}
 // class ChatInitialize extends ChatEvent {}
 class GenerateText extends ChatEvent {
   final String prompt;
-
-  GenerateText({required this.prompt});
-  
+  final bool isRetry;
+  GenerateText({required this.prompt, this.isRetry = false}); 
 }

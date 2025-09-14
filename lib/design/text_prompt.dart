@@ -1,28 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:gemini_clone/bloc/chat_bloc.dart';
+import 'package:gemini_clone/models/text_content_model.dart';
 
-Widget customListTile(String data, String role) {
-  final isUser = role == 'user';
+Widget customListTile(
+  String data,
+  String role,
+  List<TextContentModel> messages,
+  ChatBloc chatBloc,
+) {
+  final isError = role == "error";
+  final isUser = role == "user";
 
   return Align(
     alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
     child: Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isUser ? Colors.tealAccent.shade700 : Colors.grey.shade800,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(18),
-          topRight: const Radius.circular(18),
-          bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(0),
-          bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(18),
-        ),
+        color: role == 'user' ? Colors.teal.shade900 : Colors.grey.shade800,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(
-        data,
-        style: TextStyle(
-          color: isUser ? Colors.black : Colors.white,
-          fontSize: 15,
-        ),
+      child: Column(
+        crossAxisAlignment:
+            role == 'user' ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(
+            data,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          if (isError) ...[
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.tealAccent.shade700,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                // 🔥 Retry without duplicating user message
+                final latestPrompt = messages
+                    .lastWhere((msg) => msg.role == "user")
+                    .parts[0]
+                    .text;
+
+                chatBloc.add(GenerateText(
+                  prompt: latestPrompt,
+                  isRetry: true, // ✅ flag prevents duplicate
+                ));
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text("Retry"),
+            ),
+          ],
+        ],
       ),
     ),
   );
