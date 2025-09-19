@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gemini_clone/pages/home_page.dart';
+import 'package:gemini_clone/pages/landing_page.dart';
 
 Future main() async {
   await dotenv.load(fileName: ".env");
@@ -27,7 +28,8 @@ class MainApp extends StatelessWidget {
           ),
         );
       },
-      child: HomePage(),
+      // child: HomePage(),
+      child: LandingPage(),
     );
   }
 }
