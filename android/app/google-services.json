@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "904526186771",
+    "project_id": "aquaverse-f59f4",
+    "storage_bucket": "aquaverse-f59f4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904526186771:android:e4fc9e42595964799c72e6",
+        "android_client_info": {
+          "package_name": "com.palashshrote.gemini_clone"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3oxnU8ohg98HxWHQj3tcZfcBINr8QDF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
