@@ -1,19 +1,28 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gemini_clone/auth/auth_service.dart';
 import 'package:gemini_clone/pages/home_page.dart';
 
-class LandingPage extends StatefulWidget {
-  const LandingPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<LandingPage> createState() => _LandingPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LandingPageState extends State<LandingPage> {
+class _LoginPageState extends State<LoginPage> {
   bool isLogin = true;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  void clearControllerData() {
+    emailController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
+  }
+
+  final authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +60,9 @@ class _LandingPageState extends State<LandingPage> {
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 20),
+                      vertical: 14,
+                      horizontal: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -71,7 +82,9 @@ class _LandingPageState extends State<LandingPage> {
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 20),
+                      vertical: 14,
+                      horizontal: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -94,7 +107,9 @@ class _LandingPageState extends State<LandingPage> {
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14, horizontal: 20),
+                            vertical: 14,
+                            horizontal: 20,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -111,16 +126,33 @@ class _LandingPageState extends State<LandingPage> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {
-                    if (isLogin) {
-                      // handle login
-                      print("Logging in with ${emailController.text}");
-                    } else {
-                      // handle signup
-                      print("Signing up with ${emailController.text}");
+                  onPressed: () async {
+                    try {
+                      if (isLogin) {
+                        await authService.login(
+                          emailController.text,
+                          passwordController.text,
+                        );
+                      } else {
+                        if (passwordController.text ==
+                            confirmPasswordController.text) {
+                          await authService.signUp(
+                            emailController.text,
+                            confirmPasswordController.text,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Passwords do not match"),
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
-                    //navigate to home_page
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage()));
                   },
                   child: Text(
                     isLogin ? "Login" : "Sign Up",
@@ -144,6 +176,7 @@ class _LandingPageState extends State<LandingPage> {
                         setState(() {
                           isLogin = !isLogin;
                         });
+                        clearControllerData();
                       },
                       child: Text(
                         isLogin ? "Sign Up" : "Login",

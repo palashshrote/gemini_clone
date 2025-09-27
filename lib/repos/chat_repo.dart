@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -40,8 +42,7 @@ class ChatRepo {
       if (response.statusCode == 200) {
         final decoded = response.data;
 
-        if (decoded["candidates"] != null &&
-            decoded["candidates"].isNotEmpty) {
+        if (decoded["candidates"] != null && decoded["candidates"].isNotEmpty) {
           final contentData = decoded["candidates"][0]["content"];
           final textContentModel = TextContentModel.fromMap(contentData);
 

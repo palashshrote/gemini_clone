@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gemini_clone/auth/auth_service.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
 import 'package:gemini_clone/design/text_prompt.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
@@ -16,12 +17,24 @@ class _HomePageState extends State<HomePage> {
   final chatBloc = ChatBloc();
   TextEditingController promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(title: Text('AquaVerse'), centerTitle: true),
+      appBar: AppBar(
+        title: Text('AquaVerse'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              authService.logout();
+            },
+            icon: Icon(Icons.logout_outlined),
+          ),
+        ],
+      ),
       body: BlocConsumer<ChatBloc, ChatState>(
         bloc: chatBloc,
         listener: (context, state) {
