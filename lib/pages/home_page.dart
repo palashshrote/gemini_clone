@@ -20,6 +20,12 @@ class _HomePageState extends State<HomePage> {
   final authService = AuthService();
 
   @override
+  void initState() {
+    super.initState();
+    chatBloc.add(loadChatHistory());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
