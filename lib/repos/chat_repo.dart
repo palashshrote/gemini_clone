@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -24,6 +22,7 @@ class ChatRepo {
 
     final payload = {
       "contents": previousMessages.map((e) => e.toMap()).toList(),
+      // "contents": previousMessages[previousMessages.length - 1],
       "generationConfig": {
         "temperature": 0.25,
         "thinkingConfig": {"thinkingBudget": 0},
@@ -35,7 +34,7 @@ class ChatRepo {
 
     try {
       // 🔹 Debugging log
-      print("➡️ Sending payload: $payload");
+      // print("➡️ Sending payload: $payload");
 
       final response = await _dio.post(url, data: payload);
 
@@ -46,7 +45,7 @@ class ChatRepo {
           final contentData = decoded["candidates"][0]["content"];
           final textContentModel = TextContentModel.fromMap(contentData);
 
-          print("✅ Response: ${textContentModel.parts.first.text}");
+          // print("✅ Response: ${textContentModel.parts.first.text}");
           return textContentModel;
         } else {
           print("⚠️ No candidates returned by API");
