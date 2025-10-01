@@ -6,7 +6,7 @@ final class ChatInitial extends ChatState {}
 
 final class isLoading extends ChatState {
   final List<TextContentModel> messages;
-
+  
   isLoading({required this.messages});
 }
 

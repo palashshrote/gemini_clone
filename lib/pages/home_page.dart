@@ -86,35 +86,83 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Widget _chatLayout(List<TextContentModel> messages, bool loading) {
+  //   return Column(
+  //     children: [
+  //       Expanded(
+  //         flex: 8,
+  //         child: ListView.builder(
+  //           controller: _scrollController,
+  //           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+  //           itemCount: messages.length,
+  //           itemBuilder: (context, index) {
+  //             return Padding(
+  //               padding: const EdgeInsets.symmetric(vertical: 6.0),
+  //               child: customListTile(
+  //                 messages[index].parts[0].text,
+  //                 messages[index].role,
+  //                 messages,
+  //                 chatBloc,
+  //               ),
+  //             );
+  //           },
+  //         ),
+  //       ),
+  //       Expanded(
+  //         flex: 2,
+  //         child: SafeArea(child: _inputBar(loading: loading)),
+  //       ),
+  //     ],
+  //   );
+  // }
   Widget _chatLayout(List<TextContentModel> messages, bool loading) {
-    return Column(
-      children: [
-        Expanded(
-          flex: 8,
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            itemCount: messages.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6.0),
-                child: customListTile(
-                  messages[index].parts[0].text,
-                  messages[index].role,
-                  messages,
-                  chatBloc,
+  return Column(
+    children: [
+      Expanded(
+        flex: 8,
+        child: messages.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.water_drop, size: 64, color: Colors.blueAccent),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Welcome to AquaVerse 🌊",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Ask me anything to get started!",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: SafeArea(child: _inputBar(loading: loading)),
-        ),
-      ],
-    );
-  }
+              )
+            : ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6.0),
+                    child: customListTile(
+                      messages[index].parts[0].text,
+                      messages[index].role,
+                      messages,
+                      chatBloc,
+                    ),
+                  );
+                },
+              ),
+      ),
+      Expanded(
+        flex: 2,
+        child: SafeArea(child: _inputBar(loading: loading)),
+      ),
+    ],
+  );
+}
 
   // Input bar widget
   Widget _inputBar({bool loading = false}) {
