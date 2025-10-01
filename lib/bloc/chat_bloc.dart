@@ -15,23 +15,44 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<GenerateText>(onGenerateText);
     on<loadChatHistory>(_onLoadChatHistory);
   }
-  Future<void> saveChatToFirestore(String prompt, String response) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  // Future<void> saveChatToFirestore(String prompt, String response) async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) return;
 
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('chats')
-        .doc('history'); // single doc for all chats
+  //   final docRef = FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(user.uid)
+  //       .collection('chats')
+  //       .doc('history'); // single doc for all chats
 
-    await docRef.set({
-      'conversations': {
-        prompt: response, // key = prompt, value = response
-      },
-      'lastUpdated': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
+  //   await docRef.set({
+  //     'conversations': {
+  //       prompt: response, // key = prompt, value = response
+  //     },
+  //     'lastUpdated': FieldValue.serverTimestamp(),
+  //   }, SetOptions(merge: true));
+  // }
+ Future<void> saveChatToFirestore(String prompt, String response) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final docRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('chats')
+      .doc('history'); // single doc for all chats
+
+  await docRef.set({
+    'conversations': FieldValue.arrayUnion([
+      {
+        'prompt': prompt,
+        'response': response,
+      }
+    ]),
+    'lastUpdated': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+}
+
 
   FutureOr<void> onGenerateText(
     GenerateText event,
