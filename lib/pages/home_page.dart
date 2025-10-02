@@ -56,8 +56,8 @@ class _HomePageState extends State<HomePage> {
             return ListView(
               padding: EdgeInsets.zero,
               children: [
-                const DrawerHeader(
-                  decoration: BoxDecoration(color: Colors.deepPurple),
+                DrawerHeader(
+                  decoration: BoxDecoration(color: Colors.tealAccent.shade700),
                   child: Text(
                     'Chat Histories',
                     style: TextStyle(color: Colors.white, fontSize: 20),
@@ -113,9 +113,38 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         actions: [
+          // IconButton(
+          //   icon: const Icon(Icons.logout_outlined),
+          //   onPressed: () => authService.logout(),
+          // ),
           IconButton(
+            onPressed: () async {
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Confirm Logout"),
+                  content: const Text("Are you sure you want to logout?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 50, 86, 81),
+                      ),
+                      child: const Text("Logout"),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldLogout == true) {
+                authService.logout();
+              }
+            },
             icon: const Icon(Icons.logout_outlined),
-            onPressed: () => authService.logout(),
           ),
         ],
       ),
@@ -123,6 +152,7 @@ class _HomePageState extends State<HomePage> {
         bloc: chatBloc,
         listener: (context, state) {
           if (state is PromptEnteredState || state is isLoading) {
+            /*
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 _scrollController.animateTo(
@@ -131,6 +161,18 @@ class _HomePageState extends State<HomePage> {
                   curve: Curves.easeOut,
                 );
               }
+            });
+            */
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 1200),
+                    curve: Curves.easeOut,
+                  );
+                }
+              });
             });
           }
         },
