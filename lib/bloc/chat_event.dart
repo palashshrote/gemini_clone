@@ -19,3 +19,6 @@ class StartNewChat extends ChatEvent {
   final String chatId;
   StartNewChat({required this.chatId});
 }
+class GotoHomePage extends ChatEvent {
+  GotoHomePage();
+}

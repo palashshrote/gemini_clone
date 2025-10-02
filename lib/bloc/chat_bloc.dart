@@ -14,6 +14,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ChatBloc() : super(ChatInitial()) {
     on<GenerateText>(onGenerateText);
     on<loadChatHistory>(_onLoadChatHistory);
+    on<GotoHomePage>(_onGotoHomePage);
   }
   /*
  Future<void> saveChatToFirestore(String prompt, String response) async {
@@ -64,6 +65,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }, SetOptions(merge: true));
   }
 
+
+  FutureOr<void> _onGotoHomePage(
+    GotoHomePage event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(ChatInitial());
+  }
   FutureOr<void> onGenerateText(
     GenerateText event,
     Emitter<ChatState> emit,

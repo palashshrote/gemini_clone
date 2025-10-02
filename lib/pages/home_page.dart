@@ -7,6 +7,7 @@ import 'package:gemini_clone/auth/auth_service.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
 import 'package:gemini_clone/design/text_prompt.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
+import 'package:gemini_clone/utils/general_functions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -76,26 +77,50 @@ class _HomePageState extends State<HomePage> {
                       style: const TextStyle(fontSize: 12),
                     ),
                     selected: _currentChatId == doc.id,
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      setState(() {
-                        _currentChatId = doc.id;
-                      });
-                      chatBloc.add(loadChatHistory(chatId: doc.id));
+                      if (await isConnected()) {
+                        setState(() {
+                          _currentChatId = doc.id;
+                        });
+                        chatBloc.add(loadChatHistory(chatId: doc.id));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("No internet connection!"),
+                          ),
+                        );
+                      }
                     },
                   );
                 }).toList(),
                 ListTile(
-                  leading: const Icon(Icons.add),
-                  title: const Text("New Chat"),
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
                   onTap: () {
                     Navigator.pop(context);
-                    final newChatId = DateTime.now().millisecondsSinceEpoch
-                        .toString();
-                    setState(() {
-                      _currentChatId = newChatId;
-                    });
-                    chatBloc.add(StartNewChat(chatId: newChatId));
+                    chatBloc.add(GotoHomePage());
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.add),
+                  title: const Text("New Chat"),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (await isConnected()) {
+                      final newChatId = DateTime.now().millisecondsSinceEpoch
+                          .toString();
+                      setState(() {
+                        _currentChatId = newChatId;
+                      });
+                      chatBloc.add(StartNewChat(chatId: newChatId));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("No internet connection!"),
+                        ),
+                      );
+                    }
                   },
                 ),
               ],
@@ -233,7 +258,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false))),
+        // Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false))),
       ],
     );
   }
@@ -256,6 +281,7 @@ class _HomePageState extends State<HomePage> {
                   _currentChatId ?? "",
                   messages,
                   chatBloc,
+                  context,
                 ),
               );
             },
@@ -304,20 +330,29 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.black),
-                    onPressed: () {
-                      if (_currentChatId == null) {
-                        final newChatId = DateTime.now().millisecondsSinceEpoch
-                            .toString();
-                        _currentChatId = newChatId;
-                        chatBloc.add(StartNewChat(chatId: newChatId));
+                    onPressed: () async {
+                      if (await isConnected()) {
+                        if (_currentChatId == null) {
+                          final newChatId = DateTime.now()
+                              .millisecondsSinceEpoch
+                              .toString();
+                          _currentChatId = newChatId;
+                          chatBloc.add(StartNewChat(chatId: newChatId));
+                        }
+                        chatBloc.add(
+                          GenerateText(
+                            prompt: promptController.text,
+                            chatId: _currentChatId!,
+                          ),
+                        );
+                        promptController.clear();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("No internet connection!"),
+                          ),
+                        );
                       }
-                      chatBloc.add(
-                        GenerateText(
-                          prompt: promptController.text,
-                          chatId: _currentChatId!,
-                        ),
-                      );
-                      promptController.clear();
                     },
                   ),
                 ),

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gemini_clone/auth/auth_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:gemini_clone/utils/general_functions.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,6 +14,20 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // StreamSubscription<List<ConnectivityResult>>? subscription;
+  // @override
+  // void initState() {
+  //   super.initState();
+  // subscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
+  // });
+  // connectivityResult = await (Connectivity().checkConnectivity());
+  // }
+  // @override
+  // void dispose() {
+  //   subscription?.cancel();
+  //   super.dispose();
+  // }
+
   bool isLogin = true;
   bool _obscureText = true;
   final TextEditingController emailController = TextEditingController();
@@ -130,50 +148,58 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                 // Login / Signup Button
-               
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.tealAccent.shade700,
-                        foregroundColor: Colors.black,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed:  () async {
-                        try {
-                          if (isLogin) {
-                            await authService.login(
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.tealAccent.shade700,
+                    foregroundColor: Colors.black,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () async {
+                    
+                    if (await isConnected()) {
+                      try {
+                        if (isLogin) {
+                          await authService.login(
+                            emailController.text,
+                            passwordController.text,
+                          );
+                        } else {
+                          if (passwordController.text ==
+                              confirmPasswordController.text) {
+                            await authService.signUp(
                               emailController.text,
-                              passwordController.text,
+                              confirmPasswordController.text,
                             );
                           } else {
-                            if (passwordController.text ==
-                                confirmPasswordController.text) {
-                              await authService.signUp(
-                                emailController.text,
-                                confirmPasswordController.text,
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Passwords do not match"),
-                                ),
-                              );
-                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Passwords do not match"),
+                              ),
+                            );
                           }
-                        } catch (e) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(e.toString())));
                         }
-                      },
-                      child: Text(
-                        isLogin ? "Login" : "Sign Up",
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                    ),
-       
+                      } catch (e) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(e.toString())));
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Check your internet connection"),
+                              ),
+                            );
+                    }
+                  },
+                  child: Text(
+                    isLogin ? "Login" : "Sign Up",
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+
                 const SizedBox(height: 20),
 
                 // Toggle Login/Signup
