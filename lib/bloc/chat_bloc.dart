@@ -15,23 +15,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<GenerateText>(onGenerateText);
     on<loadChatHistory>(_onLoadChatHistory);
   }
-  // Future<void> saveChatToFirestore(String prompt, String response) async {
-  //   final user = FirebaseAuth.instance.currentUser;
-  //   if (user == null) return;
-
-  //   final docRef = FirebaseFirestore.instance
-  //       .collection('users')
-  //       .doc(user.uid)
-  //       .collection('chats')
-  //       .doc('history'); // single doc for all chats
-
-  //   await docRef.set({
-  //     'conversations': {
-  //       prompt: response, // key = prompt, value = response
-  //     },
-  //     'lastUpdated': FieldValue.serverTimestamp(),
-  //   }, SetOptions(merge: true));
-  // }
+  /*
  Future<void> saveChatToFirestore(String prompt, String response) async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
@@ -52,7 +36,33 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     'lastUpdated': FieldValue.serverTimestamp(),
   }, SetOptions(merge: true));
 }
+*/
 
+  Future<void> saveChatToFirestore(
+    String chatId,
+    String prompt,
+    String response,
+  ) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(chatId); // chatId can be a UUID or timestamp
+    print("DocRef: $docRef");
+    print("ChatId: $chatId");
+    await docRef.set({
+      'conversations': FieldValue.arrayUnion([
+        {
+          'prompt': prompt,
+          'response': response,
+        },
+      ]),
+      'lastUpdated': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
 
   FutureOr<void> onGenerateText(
     GenerateText event,
@@ -86,6 +96,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         print('Question : ${messages[messages.length - 2].parts[0].text}');
         print('Answer : ${messages[messages.length - 1].parts[0].text}');
         await saveChatToFirestore(
+          event.chatId,
           messages[messages.length - 2].parts[0].text,
           messages[messages.length - 1].parts[0].text,
         );
@@ -123,6 +134,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  /*
   FutureOr<void> _onLoadChatHistory(
     loadChatHistory event,
     Emitter<ChatState> emit,
@@ -177,5 +189,45 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       });
     }
     emit(PromptEnteredState(messages: messages));
+  }
+  */
+
+  Future<void> _onLoadChatHistory(
+    loadChatHistory event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(isLoading(messages: []));
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(event.chatId)
+        .get();
+
+    if (doc.exists) {
+      // List<TextContentModel> messages = [];
+      if (doc['conversations'] is List) {
+        for (var convo in doc['conversations']) {
+          messages.add(
+            TextContentModel(
+              role: "user",
+              parts: [TextPartModel(text: convo['prompt'])],
+            ),
+          );
+          messages.add(
+            TextContentModel(
+              role: "model",
+              parts: [TextPartModel(text: convo['response'])],
+            ),
+          );
+        }
+      }
+      emit(PromptEnteredState(messages: messages));
+    } else {
+      emit(PromptEnteredState(messages: []));
+    }
   }
 }

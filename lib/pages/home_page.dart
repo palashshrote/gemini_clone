@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,57 +20,124 @@ class _HomePageState extends State<HomePage> {
   TextEditingController promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final authService = AuthService();
-
+  final user = FirebaseAuth.instance.currentUser;
+  String? _currentChatId; // keeps track of selected chat session
   @override
   void initState() {
     super.initState();
-    chatBloc.add(loadChatHistory());
+    // Generate a new chat session by default
+    // _startNewChat();
+  }
+
+  void _startNewChat() {
+    _currentChatId = DateTime.now().millisecondsSinceEpoch.toString();
+    chatBloc.add(loadChatHistory(chatId: _currentChatId!));
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
-      resizeToAvoidBottomInset: true,
+      drawer: Drawer(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user!.uid)
+              .collection('chats')
+              .orderBy('lastUpdated', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData)
+              return const Center(child: CircularProgressIndicator());
+
+            final chats = snapshot.data!.docs;
+
+            return ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                const DrawerHeader(
+                  decoration: BoxDecoration(color: Colors.deepPurple),
+                  child: Text(
+                    'Chat Histories',
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+                ),
+                ...chats.map((doc) {
+                  final title = doc['title'] ?? 'Untitled Chat';
+                  return ListTile(
+                    title: Text(title),
+                    subtitle: Text(
+                      doc['lastUpdated'] != null
+                          ? (doc['lastUpdated'] as Timestamp)
+                                .toDate()
+                                .toString()
+                          : '',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    selected: _currentChatId == doc.id,
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _currentChatId = doc.id;
+                      });
+                      chatBloc.add(loadChatHistory(chatId: doc.id));
+                    },
+                  );
+                }).toList(),
+                ListTile(
+                  leading: const Icon(Icons.add),
+                  title: const Text("New Chat"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    final newChatId = DateTime.now().millisecondsSinceEpoch
+                        .toString();
+                    setState(() {
+                      _currentChatId = newChatId;
+                    });
+                    chatBloc.add(StartNewChat(chatId: newChatId));
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+      ),
       appBar: AppBar(
-        title: Text('AquaVerse'),
+        title: const Text('AquaVerse'),
         centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         actions: [
           IconButton(
-            onPressed: () {
-              authService.logout();
-            },
-            icon: Icon(Icons.logout_outlined),
+            icon: const Icon(Icons.logout_outlined),
+            onPressed: () => authService.logout(),
           ),
         ],
       ),
       body: BlocConsumer<ChatBloc, ChatState>(
         bloc: chatBloc,
         listener: (context, state) {
-          // TODO: implement listener
-          if (state is PromptEnteredState) {
+          if (state is PromptEnteredState || state is isLoading) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 _scrollController.animateTo(
                   _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 1200),
-                  curve: Curves.easeOut,
-                );
-              }
-            });
-          } else if (state is isLoading) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 400),
+                  duration: const Duration(milliseconds: 600),
                   curve: Curves.easeOut,
                 );
               }
             });
           }
         },
-
         builder: (context, state) {
+          // List<TextContentModel> messages = [];
+          // bool loading = false;
+          print("State: $state.runtimeType");
           switch (state.runtimeType) {
             case isLoading:
               final successState = state as isLoading;
@@ -79,10 +148,51 @@ class _HomePageState extends State<HomePage> {
               return _chatLayout(successState.messages, false);
 
             default:
-              return _inputBar(); // initial empty state
+              return _emptyChatScreen();
           }
+          // if (state is isLoading) {
+          //   messages = state.messages;
+          //   loading = true;
+          // } else if (state is PromptEnteredState) {
+          //   messages = state.messages;
+          //   loading = false;
+          // }
+          // Show placeholder if empty
+          // if (messages.isEmpty && !loading) {
+          //   return _emptyChatScreen();
+          // }
+          // return _chatLayout(messages, loading);
         },
       ),
+    );
+  }
+
+  Widget _emptyChatScreen() {
+    return Column(
+      children: [
+        Expanded(
+          flex: 8,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.water_drop, size: 64, color: Colors.blueAccent),
+                const SizedBox(height: 16),
+                Text(
+                  "Welcome to AquaVerse 🌊",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Ask me anything to get started!",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false))),
+      ],
     );
   }
 
@@ -101,6 +211,7 @@ class _HomePageState extends State<HomePage> {
                 child: customListTile(
                   messages[index].parts[0].text,
                   messages[index].role,
+                  _currentChatId ?? "",
                   messages,
                   chatBloc,
                 ),
@@ -116,11 +227,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Input bar widget
-  Widget _inputBar({bool loading = false}) {
+  Widget _inputBar({required bool loading}) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      padding: EdgeInsets.all(10.w),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: Row(
         children: [
           Expanded(
@@ -144,35 +253,32 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.tealAccent.shade700,
-              shape: BoxShape.circle,
-            ),
-            child: loading
-                ? const Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.black,
-                      ),
-                    ),
-                  )
-                : IconButton(
+          loading
+              ? const CircularProgressIndicator()
+              : Container(
+                  decoration: BoxDecoration(
+                    color: Colors.tealAccent.shade700,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.black),
                     onPressed: () {
-                      if (promptController.text.trim().isNotEmpty) {
-                        chatBloc.add(
-                          GenerateText(prompt: promptController.text.trim()),
-                        );
-                        promptController.clear();
+                      if (_currentChatId == null) {
+                        final newChatId = DateTime.now().millisecondsSinceEpoch
+                            .toString();
+                        _currentChatId = newChatId;
+                        chatBloc.add(StartNewChat(chatId: newChatId));
                       }
+                      chatBloc.add(
+                        GenerateText(
+                          prompt: promptController.text,
+                          chatId: _currentChatId!,
+                        ),
+                      );
+                      promptController.clear();
                     },
                   ),
-          ),
+                ),
         ],
       ),
     );
