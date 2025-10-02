@@ -5,6 +5,7 @@ import 'package:gemini_clone/models/text_content_model.dart';
 Widget customListTile(
   String data,
   String role,
+  String chatId,
   List<TextContentModel> messages,
   ChatBloc chatBloc,
 ) {
@@ -48,6 +49,7 @@ Widget customListTile(
                 chatBloc.add(GenerateText(
                   prompt: latestPrompt,
                   isRetry: true, // ✅ flag prevents duplicate
+                  chatId: chatId,
                 ));
               },
               icon: const Icon(Icons.refresh),

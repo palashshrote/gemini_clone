@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gemini_clone/auth/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -10,6 +11,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool isLogin = true;
+  bool _obscureText = true;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -68,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
                 // Password
                 TextField(
                   controller: passwordController,
-                  obscureText: true,
+                  obscureText: _obscureText,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: "Password",
@@ -82,6 +84,19 @@ class _LoginPageState extends State<LoginPage> {
                     contentPadding: const EdgeInsets.symmetric(
                       vertical: 14,
                       horizontal: 20,
+                    ),
+
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey.shade400,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureText =
+                              !_obscureText; // toggle password visibility
+                        });
+                      },
                     ),
                   ),
                 ),
@@ -115,48 +130,50 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                 // Login / Signup Button
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.tealAccent.shade700,
-                    foregroundColor: Colors.black,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  onPressed: () async {
-                    try {
-                      if (isLogin) {
-                        await authService.login(
-                          emailController.text,
-                          passwordController.text,
-                        );
-                      } else {
-                        if (passwordController.text ==
-                            confirmPasswordController.text) {
-                          await authService.signUp(
-                            emailController.text,
-                            confirmPasswordController.text,
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Passwords do not match"),
-                            ),
-                          );
+               
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.tealAccent.shade700,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed:  () async {
+                        try {
+                          if (isLogin) {
+                            await authService.login(
+                              emailController.text,
+                              passwordController.text,
+                            );
+                          } else {
+                            if (passwordController.text ==
+                                confirmPasswordController.text) {
+                              await authService.signUp(
+                                emailController.text,
+                                confirmPasswordController.text,
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Passwords do not match"),
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.toString())));
                         }
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(e.toString())));
-                    }
-                  },
-                  child: Text(
-                    isLogin ? "Login" : "Sign Up",
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ),
+                      },
+                      child: Text(
+                        isLogin ? "Login" : "Sign Up",
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+       
                 const SizedBox(height: 20),
 
                 // Toggle Login/Signup
