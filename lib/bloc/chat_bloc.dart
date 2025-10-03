@@ -16,29 +16,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<loadChatHistory>(_onLoadChatHistory);
     on<GotoHomePage>(_onGotoHomePage);
     on<GotoNewChatScreen>(_onGotoNewChatScreen);
+    on<DeleteChat>(_deleteChat);
   }
-  /*
- Future<void> saveChatToFirestore(String prompt, String response) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  Future<void> _deleteChat(DeleteChat event, Emitter<ChatState> emit) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(event.chatId)
+        .delete();
 
-  final docRef = FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('chats')
-      .doc('history'); // single doc for all chats
-
-  await docRef.set({
-    'conversations': FieldValue.arrayUnion([
-      {
-        'prompt': prompt,
-        'response': response,
-      }
-    ]),
-    'lastUpdated': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
-}
-*/
+    emit(ChatInitial());
+  }
 
   Future<void> saveChatToFirestore(
     String chatId,
@@ -57,7 +48,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     print("DocRef: $docRef");
     print("ChatId: $chatId");
     if (isFirstChat) {
-      await docRef.set({'title': 'TiTlE'});
+      String titleTxt = prompt.length > 25 ? prompt.substring(0, 25) : prompt;
+      await docRef.set({'title': titleTxt});
     }
     await docRef.set({
       'conversations': FieldValue.arrayUnion([
@@ -85,7 +77,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GenerateText event,
     Emitter<ChatState> emit,
   ) async {
-    if(event.isFirstChat) messages.clear();
+    if (event.isFirstChat) messages.clear();
     if (!event.isRetry) {
       messages.add(
         TextContentModel(
