@@ -10,6 +10,7 @@ Widget customListTile(
   List<TextContentModel> messages,
   ChatBloc chatBloc,
   BuildContext context,
+
 ) {
   final isError = role == "error";
   final isUser = role == "user";
@@ -52,6 +53,7 @@ Widget customListTile(
                       prompt: latestPrompt,
                       isRetry: true, // ✅ flag prevents duplicate
                       chatId: chatId,
+                      isFirstChat: false,
                     ),
                   );
                 } else {
