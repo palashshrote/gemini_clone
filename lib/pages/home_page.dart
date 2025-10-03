@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gemini_clone/auth/auth_service.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
 import 'package:gemini_clone/design/text_prompt.dart';
@@ -26,13 +25,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Generate a new chat session by default
-    // _startNewChat();
-  }
-
-  void _startNewChat() {
-    _currentChatId = DateTime.now().millisecondsSinceEpoch.toString();
-    chatBloc.add(loadChatHistory(chatId: _currentChatId!));
   }
 
   @override
@@ -40,95 +32,6 @@ class _HomePageState extends State<HomePage> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      /*drawer: Drawer(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(user!.uid)
-              .collection('chats')
-              .orderBy('lastUpdated', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData)
-              return const Center(child: CircularProgressIndicator());
-
-            final chats = snapshot.data!.docs;
-            // print(chats);
-            return ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                DrawerHeader(
-                  decoration: BoxDecoration(color: Colors.tealAccent.shade700),
-                  child: Text(
-                    'Chat Histories',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ),
-                ),
-                ...chats.map((doc) {
-                  final title = doc['title'] ?? 'Untitled Chat';
-                  return ListTile(
-                    title: Text(title),
-                    subtitle: Text(
-                      doc['lastUpdated'] != null
-                          ? (doc['lastUpdated'] as Timestamp)
-                                .toDate()
-                                .toString()
-                          : '',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    selected: _currentChatId == doc.id,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      if (await isConnected()) {
-                        setState(() {
-                          _currentChatId = doc.id;
-                        });
-                        chatBloc.add(loadChatHistory(chatId: doc.id));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("No internet connection!"),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                }).toList(),
-                ListTile(
-                  leading: const Icon(Icons.home),
-                  title: const Text('Home'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    chatBloc.add(GotoHomePage());
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.add),
-                  title: const Text("New Chat"),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    if (await isConnected()) {
-                      final newChatId = DateTime.now().millisecondsSinceEpoch
-                          .toString();
-                      setState(() {
-                        _currentChatId = newChatId;
-                      });
-                      chatBloc.add(StartNewChat(chatId: newChatId));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("No internet connection!"),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-      */
       drawer: Drawer(
         child: Column(
           children: [
@@ -160,9 +63,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       ...chats.map((doc) {
-                        // final title =
-                        //     doc['title'].length() > 25 ? doc['title'].substring(0, 25) + "..." : doc['title'] ??
-                        //     'Untitled Chat';
                         final title = doc['title'] ?? 'Untitled Chat';
                         return ListTile(
                           title: Text(title),
@@ -179,8 +79,6 @@ class _HomePageState extends State<HomePage> {
                             Navigator.pop(context);
                             if (await isConnected()) {
                               if (_currentChatId != doc.id) {
-                                print("both id: $_currentChatId, ${doc.id}");
-                                // ✅ only execute if different
                                 setState(() {
                                   _currentChatId = doc.id;
                                 });
@@ -194,6 +92,54 @@ class _HomePageState extends State<HomePage> {
                               );
                             }
                           },
+                          trailing: IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: Colors.tealAccent.shade700,
+                            ),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text("Delete Chat"),
+                                  content: const Text(
+                                    "Are you sure you want to delete this chat?",
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color.fromARGB(
+                                          255,
+                                          50,
+                                          86,
+                                          81,
+                                        ),
+                                      ),
+                                      child: const Text("Delete"),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                chatBloc.add(
+                                  DeleteChat(chatId: _currentChatId!),
+                                );
+                                if (_currentChatId == doc.id) {
+                                  setState(() {
+                                    _currentChatId = null;
+                                  });
+                                }
+                              }
+                            },
+                          ),
                         );
                       }).toList(),
                       ListTile(
@@ -216,21 +162,6 @@ class _HomePageState extends State<HomePage> {
                           });
                           Navigator.pop(context);
                           chatBloc.add(GotoNewChatScreen());
-                          // if (await isConnected()) {
-                          //   final newChatId = DateTime.now()
-                          //       .millisecondsSinceEpoch
-                          //       .toString();
-                          //   setState(() {
-                          //     _currentChatId = newChatId;
-                          //   });
-                          //   chatBloc.add(StartNewChat(chatId: newChatId));
-                          // } else {
-                          //   ScaffoldMessenger.of(context).showSnackBar(
-                          //     const SnackBar(
-                          //       content: Text("No internet connection!"),
-                          //     ),
-                          //   );
-                          // }
                         },
                       ),
                     ],
@@ -279,10 +210,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.logout_outlined),
-          //   onPressed: () => authService.logout(),
-          // ),
           IconButton(
             onPressed: () async {
               final shouldLogout = await showDialog<bool>(
@@ -318,17 +245,6 @@ class _HomePageState extends State<HomePage> {
         bloc: chatBloc,
         listener: (context, state) {
           if (state is PromptEnteredState || state is isLoading) {
-            /*
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeOut,
-                );
-              }
-            });
-            */
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Future.delayed(const Duration(milliseconds: 100), () {
                 if (_scrollController.hasClients) {
@@ -343,8 +259,6 @@ class _HomePageState extends State<HomePage> {
           }
         },
         builder: (context, state) {
-          // List<TextContentModel> messages = [];
-          // bool loading = false;
           print("State: $state.runtimeType");
           switch (state.runtimeType) {
             case isLoading:
@@ -360,18 +274,6 @@ class _HomePageState extends State<HomePage> {
             default:
               return _emptyChatScreen();
           }
-          // if (state is isLoading) {
-          //   messages = state.messages;
-          //   loading = true;
-          // } else if (state is PromptEnteredState) {
-          //   messages = state.messages;
-          //   loading = false;
-          // }
-          // Show placeholder if empty
-          // if (messages.isEmpty && !loading) {
-          //   return _emptyChatScreen();
-          // }
-          // return _chatLayout(messages, loading);
         },
       ),
     );
@@ -394,7 +296,10 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false, isFirstChat: true))),
+        Expanded(
+          flex: 2,
+          child: SafeArea(child: _inputBar(loading: false, isFirstChat: true)),
+        ),
       ],
     );
   }
@@ -423,7 +328,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        // Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false))),
       ],
     );
   }
@@ -504,25 +408,24 @@ class _HomePageState extends State<HomePage> {
                             ),
                           );
                         }
-                        
+
                         if (_currentChatId == null) {
                           final newChatId = DateTime.now()
                               .millisecondsSinceEpoch
                               .toString();
                           _currentChatId = newChatId;
                           print(newChatId);
-                          // chatBloc.add(StartNewChat(chatId: newChatId));
-                        } 
+                        }
                         // else {
-                          print("isFirstChat: $isFirstChat");
-                          chatBloc.add(
-                            GenerateText(
-                              prompt: promptController.text,
-                              chatId: _currentChatId!,
-                              isFirstChat: isFirstChat,
-                            ),
-                          );
-                          promptController.clear();
+                        print("isFirstChat: $isFirstChat");
+                        chatBloc.add(
+                          GenerateText(
+                            prompt: promptController.text,
+                            chatId: _currentChatId!,
+                            isFirstChat: isFirstChat,
+                          ),
+                        );
+                        promptController.clear();
                         // }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(

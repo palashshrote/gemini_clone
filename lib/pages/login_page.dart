@@ -14,20 +14,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // StreamSubscription<List<ConnectivityResult>>? subscription;
-  // @override
-  // void initState() {
-  //   super.initState();
-  // subscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
-  // });
-  // connectivityResult = await (Connectivity().checkConnectivity());
-  // }
-  // @override
-  // void dispose() {
-  //   subscription?.cancel();
-  //   super.dispose();
-  // }
-
+  
   bool isLogin = true;
   bool _obscureText = true;
   final TextEditingController emailController = TextEditingController();
@@ -53,7 +40,6 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Name
                 Text(
                   'AquaVerse',
                   style: TextStyle(
@@ -64,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // Email
                 TextField(
                   controller: emailController,
                   style: const TextStyle(color: Colors.white),
@@ -85,7 +70,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Password
                 TextField(
                   controller: passwordController,
                   obscureText: _obscureText,
@@ -112,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () {
                         setState(() {
                           _obscureText =
-                              !_obscureText; // toggle password visibility
+                              !_obscureText;
                         });
                       },
                     ),
@@ -120,7 +104,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Confirm Password (only in Sign Up mode)
                 if (!isLogin)
                   Column(
                     children: [
@@ -147,7 +130,6 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
 
-                // Login / Signup Button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.tealAccent.shade700,
@@ -202,7 +184,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 20),
 
-                // Toggle Login/Signup
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

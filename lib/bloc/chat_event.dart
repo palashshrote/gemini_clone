@@ -15,6 +15,10 @@ class loadChatHistory extends ChatEvent {
   final String chatId;
   loadChatHistory({required this.chatId});
 }
+class DeleteChat extends ChatEvent {
+  final String chatId;
+  DeleteChat({required this.chatId});
+}
 
 class StartNewChat extends ChatEvent {
   final String chatId;

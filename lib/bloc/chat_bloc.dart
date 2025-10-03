@@ -16,29 +16,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<loadChatHistory>(_onLoadChatHistory);
     on<GotoHomePage>(_onGotoHomePage);
     on<GotoNewChatScreen>(_onGotoNewChatScreen);
+    on<DeleteChat>(_deleteChat);
   }
-  /*
- Future<void> saveChatToFirestore(String prompt, String response) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+  Future<void> _deleteChat(DeleteChat event, Emitter<ChatState> emit) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(event.chatId)
+        .delete();
 
-  final docRef = FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('chats')
-      .doc('history'); // single doc for all chats
-
-  await docRef.set({
-    'conversations': FieldValue.arrayUnion([
-      {
-        'prompt': prompt,
-        'response': response,
-      }
-    ]),
-    'lastUpdated': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
-}
-*/
+    emit(ChatInitial());
+  }
 
   Future<void> saveChatToFirestore(
     String chatId,
@@ -56,9 +47,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         .doc(chatId); // chatId can be a UUID or timestamp
     print("DocRef: $docRef");
     print("ChatId: $chatId");
-    await docRef.set({
-      'title': 'TiTlE'
-    });
+    if (isFirstChat) {
+      String titleTxt = prompt.length > 25 ? prompt.substring(0, 25) : prompt;
+      await docRef.set({'title': titleTxt});
+    }
     await docRef.set({
       'conversations': FieldValue.arrayUnion([
         {'prompt': prompt, 'response': response},
@@ -85,7 +77,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GenerateText event,
     Emitter<ChatState> emit,
   ) async {
-    if(event.isFirstChat) messages.clear();
+    if (event.isFirstChat) messages.clear();
     if (!event.isRetry) {
       messages.add(
         TextContentModel(
@@ -152,64 +144,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(PromptEnteredState(messages: messages));
     }
   }
-
-  /*
-  FutureOr<void> _onLoadChatHistory(
-    loadChatHistory event,
-    Emitter<ChatState> emit,
-  ) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('chats')
-        .doc('history'); // single doc for all chats
-
-    final doc = await docRef.get();
-    final data = doc.data();
-    final rawConversations = data?['conversations'];
-
-    // List<TextContentModel> messages = [];
-
-    if (rawConversations is List) {
-      for (var convo in rawConversations) {
-        final prompt = convo['prompt'] ?? '';
-        final response = convo['response'] ?? '';
-
-        messages.add(
-          TextContentModel(
-            role: "user",
-            parts: [TextPartModel(text: prompt)],
-          ),
-        );
-        messages.add(
-          TextContentModel(
-            role: "model",
-            parts: [TextPartModel(text: response)],
-          ),
-        );
-      }
-    } else if (rawConversations is Map) {
-      rawConversations.forEach((prompt, response) {
-        messages.add(
-          TextContentModel(
-            role: "user",
-            parts: [TextPartModel(text: prompt)],
-          ),
-        );
-        messages.add(
-          TextContentModel(
-            role: "model",
-            parts: [TextPartModel(text: response)],
-          ),
-        );
-      });
-    }
-    emit(PromptEnteredState(messages: messages));
-  }
-  */
 
   Future<void> _onLoadChatHistory(
     loadChatHistory event,
