@@ -7,7 +7,8 @@ class GenerateText extends ChatEvent {
   final String prompt;
   final bool isRetry;
   final String chatId;
-  GenerateText({required this.prompt, required this.chatId, this.isRetry = false});
+  final bool isFirstChat;
+  GenerateText({required this.prompt, required this.chatId, this.isRetry = false, this.isFirstChat = false});
 }
 
 class loadChatHistory extends ChatEvent {
@@ -18,4 +19,10 @@ class loadChatHistory extends ChatEvent {
 class StartNewChat extends ChatEvent {
   final String chatId;
   StartNewChat({required this.chatId});
+}
+class GotoNewChatScreen extends ChatEvent {
+  GotoNewChatScreen();
+}
+class GotoHomePage extends ChatEvent {
+  GotoHomePage();
 }

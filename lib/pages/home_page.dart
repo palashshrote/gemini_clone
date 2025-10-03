@@ -7,6 +7,7 @@ import 'package:gemini_clone/auth/auth_service.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
 import 'package:gemini_clone/design/text_prompt.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
+import 'package:gemini_clone/utils/general_functions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -39,7 +40,7 @@ class _HomePageState extends State<HomePage> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      drawer: Drawer(
+      /*drawer: Drawer(
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('users')
@@ -52,12 +53,12 @@ class _HomePageState extends State<HomePage> {
               return const Center(child: CircularProgressIndicator());
 
             final chats = snapshot.data!.docs;
-
+            // print(chats);
             return ListView(
               padding: EdgeInsets.zero,
               children: [
-                const DrawerHeader(
-                  decoration: BoxDecoration(color: Colors.deepPurple),
+                DrawerHeader(
+                  decoration: BoxDecoration(color: Colors.tealAccent.shade700),
                   child: Text(
                     'Chat Histories',
                     style: TextStyle(color: Colors.white, fontSize: 20),
@@ -76,26 +77,50 @@ class _HomePageState extends State<HomePage> {
                       style: const TextStyle(fontSize: 12),
                     ),
                     selected: _currentChatId == doc.id,
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      setState(() {
-                        _currentChatId = doc.id;
-                      });
-                      chatBloc.add(loadChatHistory(chatId: doc.id));
+                      if (await isConnected()) {
+                        setState(() {
+                          _currentChatId = doc.id;
+                        });
+                        chatBloc.add(loadChatHistory(chatId: doc.id));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("No internet connection!"),
+                          ),
+                        );
+                      }
                     },
                   );
                 }).toList(),
                 ListTile(
-                  leading: const Icon(Icons.add),
-                  title: const Text("New Chat"),
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
                   onTap: () {
                     Navigator.pop(context);
-                    final newChatId = DateTime.now().millisecondsSinceEpoch
-                        .toString();
-                    setState(() {
-                      _currentChatId = newChatId;
-                    });
-                    chatBloc.add(StartNewChat(chatId: newChatId));
+                    chatBloc.add(GotoHomePage());
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.add),
+                  title: const Text("New Chat"),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (await isConnected()) {
+                      final newChatId = DateTime.now().millisecondsSinceEpoch
+                          .toString();
+                      setState(() {
+                        _currentChatId = newChatId;
+                      });
+                      chatBloc.add(StartNewChat(chatId: newChatId));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("No internet connection!"),
+                        ),
+                      );
+                    }
                   },
                 ),
               ],
@@ -103,6 +128,147 @@ class _HomePageState extends State<HomePage> {
           },
         ),
       ),
+      */
+      drawer: Drawer(
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user!.uid)
+                    .collection('chats')
+                    .orderBy('lastUpdated', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final chats = snapshot.data!.docs;
+
+                  return ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      DrawerHeader(
+                        decoration: BoxDecoration(
+                          color: Colors.tealAccent.shade700,
+                        ),
+                        child: const Text(
+                          'Chat Histories',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                      ),
+                      ...chats.map((doc) {
+                        // final title =
+                        //     doc['title'].length() > 25 ? doc['title'].substring(0, 25) + "..." : doc['title'] ??
+                        //     'Untitled Chat';
+                        final title = doc['title'] ?? 'Untitled Chat';
+                        return ListTile(
+                          title: Text(title),
+                          subtitle: Text(
+                            doc['lastUpdated'] != null
+                                ? (doc['lastUpdated'] as Timestamp)
+                                      .toDate()
+                                      .toString()
+                                : '',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          selected: _currentChatId == doc.id,
+                          onTap: () async {
+                            Navigator.pop(context);
+                            if (await isConnected()) {
+                              if (_currentChatId != doc.id) {
+                                print("both id: $_currentChatId, ${doc.id}");
+                                // ✅ only execute if different
+                                setState(() {
+                                  _currentChatId = doc.id;
+                                });
+                                chatBloc.add(loadChatHistory(chatId: doc.id));
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("No internet connection!"),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      }).toList(),
+                      ListTile(
+                        leading: const Icon(Icons.home),
+                        title: const Text('Home'),
+                        onTap: () {
+                          setState(() {
+                            _currentChatId = null;
+                          });
+                          Navigator.pop(context);
+                          chatBloc.add(GotoHomePage());
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.add),
+                        title: const Text("New Chat"),
+                        onTap: () async {
+                          setState(() {
+                            _currentChatId = null;
+                          });
+                          Navigator.pop(context);
+                          chatBloc.add(GotoNewChatScreen());
+                          // if (await isConnected()) {
+                          //   final newChatId = DateTime.now()
+                          //       .millisecondsSinceEpoch
+                          //       .toString();
+                          //   setState(() {
+                          //     _currentChatId = newChatId;
+                          //   });
+                          //   chatBloc.add(StartNewChat(chatId: newChatId));
+                          // } else {
+                          //   ScaffoldMessenger.of(context).showSnackBar(
+                          //     const SnackBar(
+                          //       content: Text("No internet connection!"),
+                          //     ),
+                          //   );
+                          // }
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            // 👇 User email fixed at bottom
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.account_circle,
+                      size: 30,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        user.email ?? "No Email",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+
       appBar: AppBar(
         title: const Text('AquaVerse'),
         centerTitle: true,
@@ -113,9 +279,38 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         actions: [
+          // IconButton(
+          //   icon: const Icon(Icons.logout_outlined),
+          //   onPressed: () => authService.logout(),
+          // ),
           IconButton(
+            onPressed: () async {
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Confirm Logout"),
+                  content: const Text("Are you sure you want to logout?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 50, 86, 81),
+                      ),
+                      child: const Text("Logout"),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldLogout == true) {
+                authService.logout();
+              }
+            },
             icon: const Icon(Icons.logout_outlined),
-            onPressed: () => authService.logout(),
           ),
         ],
       ),
@@ -123,6 +318,7 @@ class _HomePageState extends State<HomePage> {
         bloc: chatBloc,
         listener: (context, state) {
           if (state is PromptEnteredState || state is isLoading) {
+            /*
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (_scrollController.hasClients) {
                 _scrollController.animateTo(
@@ -131,6 +327,18 @@ class _HomePageState extends State<HomePage> {
                   curve: Curves.easeOut,
                 );
               }
+            });
+            */
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 1200),
+                    curve: Curves.easeOut,
+                  );
+                }
+              });
             });
           }
         },
@@ -147,6 +355,8 @@ class _HomePageState extends State<HomePage> {
               final successState = state as PromptEnteredState;
               return _chatLayout(successState.messages, false);
 
+            case firstChatScreen:
+              return _firstChatScreen();
             default:
               return _emptyChatScreen();
           }
@@ -164,6 +374,28 @@ class _HomePageState extends State<HomePage> {
           // return _chatLayout(messages, loading);
         },
       ),
+    );
+  }
+
+  Widget _firstChatScreen() {
+    return Column(
+      children: [
+        Expanded(
+          flex: 8,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "What can I help with?",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false, isFirstChat: true))),
+      ],
     );
   }
 
@@ -191,7 +423,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false))),
+        // Expanded(flex: 2, child: SafeArea(child: _inputBar(loading: false))),
       ],
     );
   }
@@ -214,6 +446,7 @@ class _HomePageState extends State<HomePage> {
                   _currentChatId ?? "",
                   messages,
                   chatBloc,
+                  context,
                 ),
               );
             },
@@ -227,7 +460,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _inputBar({required bool loading}) {
+  Widget _inputBar({required bool loading, bool isFirstChat = false}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: Row(
@@ -262,20 +495,42 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.black),
-                    onPressed: () {
-                      if (_currentChatId == null) {
-                        final newChatId = DateTime.now().millisecondsSinceEpoch
-                            .toString();
-                        _currentChatId = newChatId;
-                        chatBloc.add(StartNewChat(chatId: newChatId));
+                    onPressed: () async {
+                      if (await isConnected()) {
+                        if (promptController.text.length <= 1) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Your query is too short"),
+                            ),
+                          );
+                        }
+                        
+                        if (_currentChatId == null) {
+                          final newChatId = DateTime.now()
+                              .millisecondsSinceEpoch
+                              .toString();
+                          _currentChatId = newChatId;
+                          print(newChatId);
+                          // chatBloc.add(StartNewChat(chatId: newChatId));
+                        } 
+                        // else {
+                          print("isFirstChat: $isFirstChat");
+                          chatBloc.add(
+                            GenerateText(
+                              prompt: promptController.text,
+                              chatId: _currentChatId!,
+                              isFirstChat: isFirstChat,
+                            ),
+                          );
+                          promptController.clear();
+                        // }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("No internet connection!"),
+                          ),
+                        );
                       }
-                      chatBloc.add(
-                        GenerateText(
-                          prompt: promptController.text,
-                          chatId: _currentChatId!,
-                        ),
-                      );
-                      promptController.clear();
                     },
                   ),
                 ),

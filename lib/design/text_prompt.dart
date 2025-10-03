@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gemini_clone/bloc/chat_bloc.dart';
 import 'package:gemini_clone/models/text_content_model.dart';
+import 'package:gemini_clone/utils/general_functions.dart';
 
 Widget customListTile(
   String data,
@@ -8,6 +9,8 @@ Widget customListTile(
   String chatId,
   List<TextContentModel> messages,
   ChatBloc chatBloc,
+  BuildContext context,
+
 ) {
   final isError = role == "error";
   final isUser = role == "user";
@@ -22,13 +25,11 @@ Widget customListTile(
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment:
-            role == 'user' ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: role == 'user'
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
-          Text(
-            data,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
+          Text(data, style: const TextStyle(color: Colors.white, fontSize: 16)),
           if (isError) ...[
             const SizedBox(height: 8),
             ElevatedButton.icon(
@@ -39,18 +40,29 @@ Widget customListTile(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () {
+              onPressed: () async {
                 // 🔥 Retry without duplicating user message
-                final latestPrompt = messages
-                    .lastWhere((msg) => msg.role == "user")
-                    .parts[0]
-                    .text;
+                if (await isConnected()) {
+                  final latestPrompt = messages
+                      .lastWhere((msg) => msg.role == "user")
+                      .parts[0]
+                      .text;
 
-                chatBloc.add(GenerateText(
-                  prompt: latestPrompt,
-                  isRetry: true, // ✅ flag prevents duplicate
-                  chatId: chatId,
-                ));
+                  chatBloc.add(
+                    GenerateText(
+                      prompt: latestPrompt,
+                      isRetry: true, // ✅ flag prevents duplicate
+                      chatId: chatId,
+                      isFirstChat: false,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Check your internet connection"),
+                    ),
+                  );
+                }
               },
               icon: const Icon(Icons.refresh),
               label: const Text("Retry"),

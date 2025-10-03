@@ -9,11 +9,13 @@ part 'chat_event.dart';
 part 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  final List<TextContentModel> messages = [];
+  List<TextContentModel> messages = [];
 
   ChatBloc() : super(ChatInitial()) {
     on<GenerateText>(onGenerateText);
     on<loadChatHistory>(_onLoadChatHistory);
+    on<GotoHomePage>(_onGotoHomePage);
+    on<GotoNewChatScreen>(_onGotoNewChatScreen);
   }
   /*
  Future<void> saveChatToFirestore(String prompt, String response) async {
@@ -42,6 +44,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     String chatId,
     String prompt,
     String response,
+    bool isFirstChat,
   ) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -54,20 +57,35 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     print("DocRef: $docRef");
     print("ChatId: $chatId");
     await docRef.set({
+      'title': 'TiTlE'
+    });
+    await docRef.set({
       'conversations': FieldValue.arrayUnion([
-        {
-          'prompt': prompt,
-          'response': response,
-        },
+        {'prompt': prompt, 'response': response},
       ]),
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<void> _onGotoNewChatScreen(
+    GotoNewChatScreen event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(firstChatScreen());
+  }
+
+  FutureOr<void> _onGotoHomePage(
+    GotoHomePage event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(ChatInitial());
   }
 
   FutureOr<void> onGenerateText(
     GenerateText event,
     Emitter<ChatState> emit,
   ) async {
+    if(event.isFirstChat) messages.clear();
     if (!event.isRetry) {
       messages.add(
         TextContentModel(
@@ -99,6 +117,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           event.chatId,
           messages[messages.length - 2].parts[0].text,
           messages[messages.length - 1].parts[0].text,
+          event.isFirstChat,
         );
         emit(PromptEnteredState(messages: messages));
       } else {
@@ -196,6 +215,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     loadChatHistory event,
     Emitter<ChatState> emit,
   ) async {
+    messages = [];
     emit(isLoading(messages: []));
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;

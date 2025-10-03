@@ -9,6 +9,9 @@ final class isLoading extends ChatState {
   
   isLoading({required this.messages});
 }
+final class firstChatScreen extends ChatState {
+  
+}
 
 final class PromptEnteredState extends ChatState {
   final List<TextContentModel> messages;
