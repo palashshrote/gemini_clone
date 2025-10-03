@@ -56,9 +56,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         .doc(chatId); // chatId can be a UUID or timestamp
     print("DocRef: $docRef");
     print("ChatId: $chatId");
-    await docRef.set({
-      'title': 'TiTlE'
-    });
+    if (isFirstChat) {
+      await docRef.set({'title': 'TiTlE'});
+    }
     await docRef.set({
       'conversations': FieldValue.arrayUnion([
         {'prompt': prompt, 'response': response},
@@ -152,64 +152,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(PromptEnteredState(messages: messages));
     }
   }
-
-  /*
-  FutureOr<void> _onLoadChatHistory(
-    loadChatHistory event,
-    Emitter<ChatState> emit,
-  ) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('chats')
-        .doc('history'); // single doc for all chats
-
-    final doc = await docRef.get();
-    final data = doc.data();
-    final rawConversations = data?['conversations'];
-
-    // List<TextContentModel> messages = [];
-
-    if (rawConversations is List) {
-      for (var convo in rawConversations) {
-        final prompt = convo['prompt'] ?? '';
-        final response = convo['response'] ?? '';
-
-        messages.add(
-          TextContentModel(
-            role: "user",
-            parts: [TextPartModel(text: prompt)],
-          ),
-        );
-        messages.add(
-          TextContentModel(
-            role: "model",
-            parts: [TextPartModel(text: response)],
-          ),
-        );
-      }
-    } else if (rawConversations is Map) {
-      rawConversations.forEach((prompt, response) {
-        messages.add(
-          TextContentModel(
-            role: "user",
-            parts: [TextPartModel(text: prompt)],
-          ),
-        );
-        messages.add(
-          TextContentModel(
-            role: "model",
-            parts: [TextPartModel(text: response)],
-          ),
-        );
-      });
-    }
-    emit(PromptEnteredState(messages: messages));
-  }
-  */
 
   Future<void> _onLoadChatHistory(
     loadChatHistory event,
