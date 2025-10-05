@@ -40,14 +40,21 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'AquaVerse',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                  'GemChat ',
                   style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
                     color: Colors.tealAccent.shade700,
                   ),
                 ),
+                    Icon(Icons.diamond, size: 50, color: Colors.blueAccent),
+                  ],
+                ),
+                
                 const SizedBox(height: 40),
 
                 TextField(
@@ -90,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureText ? Icons.visibility : Icons.visibility_off,
+                        _obscureText ? Icons.visibility_off : Icons.visibility,
                         color: Colors.grey.shade400,
                       ),
                       onPressed: () {

@@ -201,7 +201,7 @@ class _HomePageState extends State<HomePage> {
       ),
 
       appBar: AppBar(
-        title: const Text('AquaVerse'),
+        title: const Text('GemChat'),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
@@ -313,10 +313,10 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.water_drop, size: 64, color: Colors.blueAccent),
+                Icon(Icons.diamond, size: 64, color: Colors.blueAccent),
                 const SizedBox(height: 16),
                 Text(
-                  "Welcome to AquaVerse 🌊",
+                  "Welcome to GemChat",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
